@@ -1,17 +1,18 @@
 package edu.anadolu;
 
+import javax.swing.plaf.IconUIResource;
 import java.util.*;
 
 /**
  * Hello world!
  */
 public class App {
+    static final int DEPOT_NUMBERS = 2;
+    static final int ROUTE_NUMBERS = 5;
 
     public static void main(String[] args) {
-        final int DEPOT_NUMBERS = 2;
-        final int ROUTE_NUMBERS = 5;
-        Map<LinkedHashMap<Integer, ArrayList<Integer>[]>, Integer> solutions = new HashMap<>();
 
+        Map<LinkedHashMap<Integer, ArrayList<Integer>[]>, Integer> solutions = new HashMap<>();//?????????
 
         /*Params params;
         try {
@@ -49,6 +50,7 @@ public class App {
             best.print(params.getVerbose());
             System.out.println("**Total cost is " + best.cost());
         }*/
+
         int tryCounter = 0;
         while (tryCounter != 100000) {
             int multiply = ROUTE_NUMBERS * DEPOT_NUMBERS;
@@ -79,7 +81,7 @@ public class App {
                     if (counter == DEPOT_NUMBERS * ROUTE_NUMBERS - 1) {
                         route_border = 81 - sum;
                     } else {
-                        route_border = (int) (Math.random() * (cities.size() - (multiply- 1)) + 1);//*********
+                        route_border = (int) (Math.random() * (cities.size() - (multiply - 1)) + 1);//*********
                     }
                     counter++;
                     multiply--;//****
@@ -90,20 +92,27 @@ public class App {
                         route_cities.add(rnd_route);
                     }
                     entry.getValue()[j] = route_cities;
-
                 }
             }
             solutions.put(map, calculateCost(map, ROUTE_NUMBERS));
             tryCounter++;
+        }
+        Map<Integer, ArrayList<Integer>[]> map = bestSolution(solutions);
+        Map<Integer, ArrayList<Integer>[]> copy = copy(map);
 
-
+        int tryCounter2 = 0;
+        while (tryCounter2 != 5000000) {
+            copy = swapNodesInRoute(map);
+            if (calculateCost(copy, ROUTE_NUMBERS) < calculateCost(map, ROUTE_NUMBERS)) {
+                map = copy(copy);//???????
+            }else
+                copy = copy(map);//???????
+            tryCounter2++;
         }
 
 
         print(bestSolution(solutions));
         System.out.println(calculateCost((bestSolution(solutions)), ROUTE_NUMBERS));
-
-
     }
 
     public static Map<Integer, ArrayList<Integer>[]> copy(Map<Integer, ArrayList<Integer>[]> map) {
@@ -135,7 +144,6 @@ public class App {
         }
     }
 
-
     public static int calculateCost(Map<Integer, ArrayList<Integer>[]> map, int ROUTE_NUMBERS) {
         int cost = 0;
         for (Map.Entry<Integer, ArrayList<Integer>[]> entry : map.entrySet()) {
@@ -145,9 +153,7 @@ public class App {
                     int city = entry.getValue()[i].get(j);
                     cost += TurkishNetwork.distance[depot][city];
                 }
-
             }
-
         }
         return cost;
     }
@@ -163,4 +169,38 @@ public class App {
         return bestSolution;
     }
 
+    public static int[] generateRandomNumber(int lowerBound, int upperBound) {
+        int[] arr = new int[2];
+        if (lowerBound == upperBound) {
+            throw new RuntimeException("Alt ve üst sınır aynı olamaz!");
+        }
+        while (true) {
+            int rnd = (int) (Math.random() * (upperBound - lowerBound) + lowerBound);
+            int rnd1 = (int) (Math.random() * (upperBound - lowerBound) + lowerBound);
+            if (rnd != rnd1) {
+                arr[0] = rnd;
+                arr[1] = rnd1;
+                break;
+            }
+        }
+        return arr;
+    }
+
+    public static Map<Integer, ArrayList<Integer>[]> swapNodesInRoute(Map<Integer, ArrayList<Integer>[]> map) {
+        //int[] rndDepot = generateRandomNumber(0, DEPOT_NUMBERS);
+        //int[] rnd = generateRandomNumber(0, map);
+        int depotIndex = (int) (Math.random() * DEPOT_NUMBERS);
+        int routeIndex = (int) (Math.random() * ROUTE_NUMBERS);
+        int counter = 0;
+        for (Map.Entry<Integer, ArrayList<Integer>[]> entry : map.entrySet()) {
+            if (counter == depotIndex) {
+                ArrayList<Integer> temp = entry.getValue()[routeIndex];
+                int[] numbers = generateRandomNumber(0, temp.size());
+                Collections.swap(temp, numbers[0], numbers[1]);
+            }
+            counter++;
+        }
+        //int[] numbers = generateRandomNumber(0, 0);
+        return map;
+    }
 }
