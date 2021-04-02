@@ -11,9 +11,7 @@ public class App {
     static int cost;
 
     public static void main(String[] args) {
-
         LinkedHashMap<LinkedHashMap<Integer, ArrayList<Integer>[]>, Integer> solutions = new LinkedHashMap<>();//?????????
-
 
         /*Params params;
         try {
@@ -101,12 +99,12 @@ public class App {
 
 
         LinkedHashMap<Integer, ArrayList<Integer>[]> firstSolution = bestSolution(solutions);//100.000 de bir çözüm
-        //   LinkedHashMap<Integer, ArrayList<Integer>[]> copy = copy(firstSolution);//copy of firstSolution
-        ArrayList<Integer> bir = new ArrayList<>();
+        //LinkedHashMap<Integer, ArrayList<Integer>[]> copy = copy(firstSolution);//copy of firstSolution
+        /*ArrayList<Integer> bir = new ArrayList<>();
         bir.add(6);
         ArrayList<Integer> iki = new ArrayList<>();
         iki.add(10);
-        ArrayList<Integer>[] asd = new ArrayList[]{bir, iki};
+        ArrayList<Integer>[] asd = new ArrayList[]{bir, iki};*/
 
         LinkedHashMap<Integer, ArrayList<Integer>[]> copy = copy(firstSolution);
 
@@ -135,13 +133,13 @@ public class App {
         int tryCounter2 = 0;
         while (tryCounter2 != 5000000) {
 
-            firstSolution = check(firstSolution, swapNodesInRoute(copy));
+            firstSolution = check(firstSolution, swapNodesBetweenRoutes(copy));
             tryCounter2++;
         }
 
         print(firstSolution);
         System.out.println(cost);
-        printConsole(solutions);
+        //printConsole(solutions);
 
     }
 
@@ -220,21 +218,79 @@ public class App {
         return bestSolution;
     }
 
-    public static int[] generateRandomNumber(int lowerBound, int upperBound) {
+    public static int[] generateRandomNumber(int lowerBound, int upperBound, boolean canSame) {
         int[] arr = new int[2];
         if (lowerBound == upperBound) {
             throw new RuntimeException("Alt ve üst sınır aynı olamaz!");
         }
-        while (true) {
-            int rnd = (int) (Math.random() * (upperBound - lowerBound) + lowerBound);
-            int rnd1 = (int) (Math.random() * (upperBound - lowerBound) + lowerBound);
-            if (rnd != rnd1) {
-                arr[0] = rnd;
-                arr[1] = rnd1;
-                break;
+        if (!canSame) {
+            while (true) {
+                int rnd = (int) (Math.random() * (upperBound - lowerBound) + lowerBound);
+                int rnd1 = (int) (Math.random() * (upperBound - lowerBound) + lowerBound);
+                if (rnd != rnd1) {
+                    arr[0] = rnd;
+                    arr[1] = rnd1;
+                    break;
+                }
             }
+        } else {
+            arr[0] = (int) (Math.random() * (upperBound - lowerBound) + lowerBound);
+            arr[1] = (int) (Math.random() * (upperBound - lowerBound) + lowerBound);
         }
         return arr;
+    }
+
+    public static LinkedHashMap<Integer, ArrayList<Integer>[]> check(LinkedHashMap<Integer, ArrayList<Integer>[]> solution, LinkedHashMap<Integer, ArrayList<Integer>[]> newSolution) {
+        int newCost = calculateCost(newSolution);
+        if (newCost < cost) {
+            solution = copy(newSolution);
+            cost = newCost;
+        }
+        return solution;
+    }
+
+    public static LinkedHashMap<Integer, ArrayList<Integer>[]> swapNodesBetweenRoutes(LinkedHashMap<Integer, ArrayList<Integer>[]> copyMap) {
+        int[] depotIndexes = generateRandomNumber(0, DEPOT_NUMBERS, true);
+        int[] routeIndexes;
+        if (depotIndexes[0] == depotIndexes[1]) {
+            routeIndexes = generateRandomNumber(0, ROUTE_NUMBERS, false);
+        } else
+            routeIndexes = generateRandomNumber(0, ROUTE_NUMBERS, true);
+        int[] nodeIndexes = new int[2];
+        int n1 = 0;
+        int n2 = 0;
+        int depot1 = 0;
+        int depot2 = 0;
+        //Find 2 nodes in random node and keep as n1,n2
+
+        for (Map.Entry<Integer, ArrayList<Integer>[]> entry : copyMap.entrySet()) {
+            if (depotIndexes[0] == depot1) {
+                int rnd = (int) (Math.random() * entry.getValue()[routeIndexes[0]].size());
+                nodeIndexes[0] = rnd;
+                n1 = entry.getValue()[routeIndexes[0]].get(rnd);
+            }
+            if (depotIndexes[1] == depot2) {
+                int rnd = (int) (Math.random() * entry.getValue()[routeIndexes[1]].size());
+                nodeIndexes[1] = rnd;
+                n2 = entry.getValue()[routeIndexes[1]].get(nodeIndexes[1]);
+            }
+            depot1++;
+            depot2++;
+        }
+        depot1 = 0;
+        depot2 = 0;
+        //Swap n1 and n2
+        for (Map.Entry<Integer, ArrayList<Integer>[]> entry : copyMap.entrySet()) {
+            if (depotIndexes[0] == depot1) {
+                entry.getValue()[routeIndexes[0]].set(nodeIndexes[0], n2);
+            }
+            if (depotIndexes[1] == depot2) {
+                entry.getValue()[routeIndexes[1]].set(nodeIndexes[1], n1);
+            }
+            depot1++;
+            depot2++;
+        }
+        return copyMap;
     }
 
     public static LinkedHashMap<Integer, ArrayList<Integer>[]> swapNodesInRoute(LinkedHashMap<Integer, ArrayList<Integer>[]> copyMap) {
@@ -245,7 +301,7 @@ public class App {
         for (Map.Entry<Integer, ArrayList<Integer>[]> entry : copyMap.entrySet()) {
             if (counter == depotIndex) {
                 if (entry.getValue()[routeIndex].size() != 1) {
-                    int[] numbers = generateRandomNumber(0, entry.getValue()[routeIndex].size());
+                    int[] numbers = generateRandomNumber(0, entry.getValue()[routeIndex].size(), false);
                     Collections.swap(entry.getValue()[routeIndex], numbers[0], numbers[1]);
                 } else {
                     break;
@@ -254,14 +310,5 @@ public class App {
             counter++;
         }
         return copyMap;
-    }
-
-    public static LinkedHashMap<Integer, ArrayList<Integer>[]> check(LinkedHashMap<Integer, ArrayList<Integer>[]> solution, LinkedHashMap<Integer, ArrayList<Integer>[]> newSolution) {
-        int newCost = calculateCost(newSolution);
-        if (newCost < cost) {
-            solution = copy(newSolution);
-            cost = newCost;
-        }
-        return solution;
     }
 }
