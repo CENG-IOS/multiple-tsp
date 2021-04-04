@@ -7,8 +7,8 @@ import java.util.*;
  */
 @SuppressWarnings("DanglingJavadoc")
 public class App {
-    static final int DEPOT_NUMBERS = 2;
-    static final int ROUTE_NUMBERS = 5;
+    static final int DEPOT_NUMBERS = 5;
+    static final int ROUTE_NUMBERS = 2;
     static int cost = 0;
 
     static int swapNodesInRoute = 0;
@@ -25,11 +25,9 @@ public class App {
 
         int tryCounter = 0;
         while (tryCounter != 100000) {
-            int route_border = (81 - DEPOT_NUMBERS) / (DEPOT_NUMBERS * ROUTE_NUMBERS);
+            int multiply = ROUTE_NUMBERS * DEPOT_NUMBERS;
             int sum = 0;
             LinkedHashMap<Integer, ArrayList<Integer>[]> map = new LinkedHashMap<>();
-
-
             LinkedList<Integer> cities = new LinkedList<>();
             for (int i = 0; i < 81; i++) {
                 cities.add(i);
@@ -47,19 +45,19 @@ public class App {
             /** Route şehirleri seçimi */
             int counter = 0;
             for (Map.Entry<Integer, ArrayList<Integer>[]> entry : map.entrySet()) {
-                int rndRouteBorder = 0;
                 for (int j = 0; j < ROUTE_NUMBERS; j++) {
                     ArrayList<Integer> route_cities = new ArrayList<>();
+                    int route_border;
                     if (counter == DEPOT_NUMBERS * ROUTE_NUMBERS - 1) {
-                        rndRouteBorder = 81 - sum;
+                        route_border = 81 - sum;
                     } else {
-                        rndRouteBorder = (int) (Math.random() * 2 + route_border);
+                        route_border = (int) (Math.random() * (cities.size() - (multiply - 1)) + 1);//*********
                     }
                     counter++;
+                    multiply--;//****
+                    sum += route_border;
 
-                    sum += rndRouteBorder;
-
-                    for (int i = 0; i < rndRouteBorder; i++) {
+                    for (int i = 0; i < route_border; i++) {
                         int rnd_route = cities.remove(0);
                         route_cities.add(rnd_route);
                     }
@@ -67,7 +65,6 @@ public class App {
                 }
             }
             solution = map;
-
             if (tryCounter == 0)
                 bestSolution = copy(solution);
 
@@ -105,37 +102,29 @@ public class App {
         while (tryCounter2 != 5000000) {
             int rnd = (int) (Math.random() * 4);
             LinkedHashMap<Integer, ArrayList<Integer>[]> swappedMap;
-            //LinkedHashMap<Integer, ArrayList<Integer>[]> swappedMap = insertNodeInRoute(copySolution);
-            //LinkedHashMap<Integer, ArrayList<Integer>[]> swappedMap = swapNodesInRoute(copySolution);
-            //LinkedHashMap<Integer, ArrayList<Integer>[]> swappedMap = insertNodeBetweenRoutes(copySolution); //şehirleri siliyor
-            //LinkedHashMap<Integer, ArrayList<Integer>[]> swappedMap = swapHubWithNodeInRoute(copySolution);
-            // LinkedHashMap<Integer, ArrayList<Integer>[]> swappedMap = swapNodesBetweenRoutes(copySolution);
-            /* if (check(bestSolution, swappedMap)) {
-                bestSolution = copy(swappedMap);
-            }*/
 
             /** Switch yapısı var */
             switch (rnd) {
                 case 0:
-                    swappedMap = swapNodesInRoute(copySolution);
+                    swappedMap = (swapNodesInRoute(copySolution));
                     if (check(bestSolution, swappedMap)) {
                         bestSolution = copy(swappedMap);
                     }
                     break;
                 case 1:
-                    swappedMap = swapHubWithNodeInRoute(copySolution);
+                    swappedMap = (swapHubWithNodeInRoute(copySolution));
                     if (check(bestSolution, swappedMap)) {
                         bestSolution = copy(swappedMap);
                     }
                     break;
                 case 2:
-                    swappedMap = swapNodesBetweenRoutes(copySolution);
+                    swappedMap = (swapNodesBetweenRoutes(copySolution));
                     if (check(bestSolution, swappedMap)) {
                         bestSolution = copy(swappedMap);
                     }
                     break;
                 case 3:
-                    swappedMap = insertNodeInRoute(copySolution);
+                    swappedMap = (insertNodeInRoute(copySolution));
                     if (check(bestSolution, swappedMap)) {
                         bestSolution = copy(swappedMap);
                     }
@@ -154,10 +143,10 @@ public class App {
         System.out.println("New Solution :");
         print(bestSolution);
         System.out.println("** " + cost);
-        printCounters();
+        printCounters(); //bozuk :(
     }
 
-    public static void printCounters() {
+    public static void printCounters() {// bozuk counterlar
         System.out.println("swapNodesInRoute: " + swapNodesInRoute);
         System.out.println("swapHubWithNodeInRoute: " + swapHubWithNodeInRoute);
         System.out.println("swapNodesBetweenRoutes: " + swapNodesBetweenRoutes);
@@ -205,18 +194,22 @@ public class App {
 
     public static int calculateCost(LinkedHashMap<Integer, ArrayList<Integer>[]> map) {
         int cost = 0;
+        int depot = 0;
         for (Map.Entry<Integer, ArrayList<Integer>[]> entry : map.entrySet()) {
             int beginning;
+            int city = 0;
             for (int i = 0; i < ROUTE_NUMBERS; i++) {
                 for (int j = 0; j < entry.getValue()[i].size(); j++) {
                     if (j == 0) {
                         beginning = entry.getKey();
+                        depot = entry.getKey();
                     } else {
                         beginning = entry.getValue()[i].get(j - 1);
                     }
-                    int city = entry.getValue()[i].get(j);
+                    city = entry.getValue()[i].get(j);
                     cost += TurkishNetwork.distance[beginning][city];
                 }
+                cost += TurkishNetwork.distance[city][depot];
             }
         }
         return cost;
@@ -385,25 +378,25 @@ public class App {
                 }*/
                 //int[] routeIndexes = generateRandomNumber(0, entry.getValue().length, false);
                 int routeIndex = (int) (Math.random() * entry.getValue().length);
-                if (entry.getValue()[routeIndex].size() == 1) {
+                if (entry.getValue()[routeIndex].size() != 1) {
                     //System.out.println("uzunluğu 1, değişim yapılmadı");
-                    return copyMap;
-                } else {
                     int[] nodesIndexes = generateRandomNumber(0, entry.getValue()[routeIndex].size(), false);
-
                     int rndIndex1 = nodesIndexes[0];//silinecek olan node'un indexi
                     int rndIndex2 = nodesIndexes[1];//yanına alınacak olan node'un indexi
                     int number1 = entry.getValue()[routeIndex].get(rndIndex1);//silinecek olan node
                     int number2 = entry.getValue()[routeIndex].get(rndIndex2);//yanına alınacak olan node
                     entry.getValue()[routeIndex].set(rndIndex1, -1);//silmek yerine -1 koydum
                     entry.getValue()[routeIndex].add(rndIndex2 + 1, number1);
-                    for (int i = 0; i < entry.getValue()[routeIndex].size(); i++) {
+                    entry.getValue()[routeIndex].remove((Integer) (-1));//???????????
+                    /*for (int i = 0; i < entry.getValue()[routeIndex].size(); i++) {
                         if (entry.getValue()[routeIndex].get(i) == -1) {
                             Integer a = entry.getValue()[routeIndex].remove(i);//?????????
                         }
-                    }
+                    }*/
                     insertNodeInRoute++;
-                    /*int rnd = (int) (Math.random() * 2);
+                    break;
+                }
+                /*int rnd = (int) (Math.random() * 2);
                     int selectedIndex = nodesIndexes[rnd];
                     int selected = entry.getValue()[routeIndex].get(selectedIndex);
                     int otherIndex;
@@ -419,7 +412,6 @@ public class App {
                             Integer a = entry.getValue()[routeIndex].remove(i);//?????????
                         }
                     }*/
-                }
             }
         }
         return copyMap;
