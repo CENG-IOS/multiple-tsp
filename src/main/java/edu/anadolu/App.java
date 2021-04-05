@@ -109,33 +109,38 @@ public class App {
                     swappedMap = (swapNodesInRoute(copySolution));
                     if (check(bestSolution, swappedMap)) {
                         bestSolution = copy(swappedMap);
+                        swapNodesInRoute++;
                     }
                     break;
                 case 1:
                     swappedMap = (swapHubWithNodeInRoute(copySolution));
                     if (check(bestSolution, swappedMap)) {
                         bestSolution = copy(swappedMap);
+                        swapHubWithNodeInRoute++;
                     }
                     break;
                 case 2:
                     swappedMap = (swapNodesBetweenRoutes(copySolution));
                     if (check(bestSolution, swappedMap)) {
                         bestSolution = copy(swappedMap);
+                        swapNodesBetweenRoutes++;
                     }
                     break;
                 case 3:
                     swappedMap = (insertNodeInRoute(copySolution));
                     if (check(bestSolution, swappedMap)) {
                         bestSolution = copy(swappedMap);
+                        insertNodeInRoute++;
                     }
                     break;
-                /*case 4:
+                case 4:
                     if (DEPOT_NUMBERS >= 2) {
                         swappedMap = insertNodeBetweenRoutes(copySolution);
                         if (check(bestSolution, swappedMap)) {
                             bestSolution = copy(swappedMap);
+                            insertNodeBetweenRoutes++;
                         }
-                    }*/
+                    }
             }
             tryCounter2++;
         }
@@ -143,7 +148,7 @@ public class App {
         System.out.println("New Solution :");
         print(bestSolution);
         System.out.println("** " + cost);
-        printCounters(); //bozuk :(
+        printCounters();
     }
 
     public static void printCounters() {// bozuk counterlar
@@ -152,8 +157,8 @@ public class App {
         System.out.println("swapNodesBetweenRoutes: " + swapNodesBetweenRoutes);
         System.out.println("insertNodeInRoute: " + insertNodeInRoute);
         System.out.println("insertNodeBetweenRoutes: " + insertNodeBetweenRoutes);
-        int temp = 5000000 - (swapNodesInRoute + swapHubWithNodeInRoute + swapNodesBetweenRoutes + insertNodeInRoute + insertNodeBetweenRoutes);
-        System.out.println("Atlanan adım sayısı: " + temp);
+        /*int temp = 5000000 - (swapNodesInRoute + swapHubWithNodeInRoute + swapNodesBetweenRoutes + insertNodeInRoute + insertNodeBetweenRoutes);
+        System.out.println("Atlanan adım sayısı: " + temp);*/
     }
 
     public static LinkedHashMap<Integer, ArrayList<Integer>[]> copy(LinkedHashMap<Integer, ArrayList<Integer>[]> map) {
@@ -252,7 +257,7 @@ public class App {
                 if (entry.getValue()[routeIndex].size() != 1) {
                     int[] numbers = generateRandomNumber(0, entry.getValue()[routeIndex].size(), false);
                     Collections.swap(entry.getValue()[routeIndex], numbers[0], numbers[1]);
-                    swapNodesInRoute++;
+                    //swapNodesInRoute++;
                 } else {
                     break;
                 }
@@ -297,7 +302,7 @@ public class App {
         }
         copyMap.remove(temp1);
         copyMap.put(temp, array);
-        swapHubWithNodeInRoute++;
+        //swapHubWithNodeInRoute++;
         return copyMap;
     }
 
@@ -341,7 +346,7 @@ public class App {
             depot1++;
             depot2++;
         }
-        swapNodesBetweenRoutes++;
+        //swapNodesBetweenRoutes++;
         return copyMap;
     }
 
@@ -393,7 +398,7 @@ public class App {
                             Integer a = entry.getValue()[routeIndex].remove(i);//?????????
                         }
                     }*/
-                    insertNodeInRoute++;
+                    //insertNodeInRoute++;
                     break;
                 }
                 /*int rnd = (int) (Math.random() * 2);
@@ -419,31 +424,39 @@ public class App {
 
     public static LinkedHashMap<Integer, ArrayList<Integer>[]> insertNodeBetweenRoutes(LinkedHashMap<Integer, ArrayList<Integer>[]> copyMap) {
         int[] depotIndexes = generateRandomNumber(0, DEPOT_NUMBERS, false);
-        ArrayList<Integer> temp = new ArrayList<>();
-        temp.add(depotIndexes[0]);
-        temp.add(depotIndexes[1]);
-        Collections.shuffle(temp);
-
         int depot1 = 0;
         int depot2 = 0;
+        int deleted = -1;
+        int route1Index = 0;
+        int route2Index;
+        ArrayList<Integer> route1;
+        ArrayList<Integer> route2;
         for (Map.Entry<Integer, ArrayList<Integer>[]> entry : copyMap.entrySet()) {
-            int deleted = -1;
-            if (temp.get(0) == depot1) {
-                int route1Index = (int) (Math.random() * entry.getValue().length);
+
+            if (depotIndexes[0] == depot1) {
+
                 if (entry.getValue()[route1Index].size() == 1) {
-                    break;//zorlamıyor
+                    break;
                 } else {
-                    int node = (int) (Math.random() * entry.getValue()[route1Index].size());
+                    route1 = entry.getValue()[route1Index];
+                    int node = (int) (Math.random() * route1.size());
                     deleted = entry.getValue()[route1Index].remove(node);
                 }
             }
-            if (temp.get(1) == depot2) {
+            if (depotIndexes[1] == depot2) {
                 if (deleted == -1) {
+                    depot1++;
                     continue;
                 } else {
-                    int route2Index = (int) (Math.random() * entry.getValue().length);
-                    int node = (int) (Math.random() * entry.getValue()[route2Index].size());
+                    route2Index = (int) (Math.random() * entry.getValue().length);
+                    route2 = entry.getValue()[route2Index];
+
+
+                    int node = (int) (Math.random() * route2.size());
                     entry.getValue()[route2Index].add(node + 1, deleted);
+
+                    break;
+
                 }
             }
             depot1++;
