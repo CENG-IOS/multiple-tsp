@@ -13,7 +13,7 @@ public class Main {
             return;
         }
 
-        mTSP mTSP = new mTSP(params.getNumDepots(), params.getNumSalesmen());
+        mTSP mTSP = new mTSP(params.getNumDepots(), params.getNumSalesmen(), params.getVerbose());
         mTSP.firstPart();
         mTSP.secondPart();
     }

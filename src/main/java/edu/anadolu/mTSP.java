@@ -1,13 +1,14 @@
 package edu.anadolu;
 
-
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @SuppressWarnings("ALL")
 public class mTSP {
     private final int DEPOT_NUMBERS;
     private final int ROUTE_NUMBERS;
-    private int cost = 0;
+    private int bestCost = 0;
+    private boolean verbose;
 
     private int swapNodesInRoute = 0;
     private int swapHubWithNodeInRoute = 0;
@@ -16,12 +17,15 @@ public class mTSP {
     private int insertNodeBetweenRoutes = 0;
 
     private LinkedHashMap<Integer, ArrayList<Integer>[]> bestSolution = new LinkedHashMap<>();
-    private LinkedHashMap<Integer, ArrayList<Integer>[]> solution;
+    //private LinkedHashMap<Integer, ArrayList<Integer>[]> solution;
     private LinkedHashMap<Integer, ArrayList<Integer>[]> copySolution;
+    private Map<LinkedHashMap<Integer, ArrayList<Integer>[]>, Integer> solutions = new HashMap<>();
+    //private ConcurrentMap<LinkedHashMap<Integer, ArrayList<Integer>[]>, Integer> solutions = new ConcurrentHashMap<>();
 
-    public mTSP(int depot_numbers, int route_numbers) {
+    public mTSP(int depot_numbers, int route_numbers, boolean verbose) {
         DEPOT_NUMBERS = depot_numbers;
         ROUTE_NUMBERS = route_numbers;
+        this.verbose = verbose;
     }
 
     private void printCounters() {
@@ -117,7 +121,7 @@ public class mTSP {
         int newCost = calculateCost(newSolution);
         int originalCost = calculateCost(bestSolution);
         if (newCost < originalCost) {
-            cost = newCost;
+            bestCost = newCost;
             return true;
         }
         return false;
@@ -303,10 +307,58 @@ public class mTSP {
         return copySolution;
     }
 
-    public void firstPart (){
-        int tryCounter = 0;
-        while (tryCounter != 100000) {
-            int route_border = (81 - DEPOT_NUMBERS) / (DEPOT_NUMBERS * ROUTE_NUMBERS);
+    public void firstPart() {
+        AtomicInteger tryCounter = new AtomicInteger(0);
+
+        /*IntStream.range(1, 1000000)
+                .boxed()
+                .parallel()
+                .forEach(x -> {
+                            int route_border = (81 - DEPOT_NUMBERS) / (DEPOT_NUMBERS * ROUTE_NUMBERS);
+                            int sum = 0;
+                            LinkedHashMap<Integer, ArrayList<Integer>[]> map = new LinkedHashMap<>();
+                            LinkedList<Integer> cities = new LinkedList<>();
+                            for (int i = 0; i < 81; i++) {
+                                cities.add(i);
+                            }
+                            Collections.shuffle(cities);
+
+                            for (int i = 0; i < DEPOT_NUMBERS; i++) {
+                                ArrayList<Integer>[] arrayLists = new ArrayList[ROUTE_NUMBERS];
+                                int rnd_depot = cities.remove(0);
+                                map.put(rnd_depot, arrayLists);
+                                sum += 1;
+                            }
+                            int counter = 0;
+                            for (Map.Entry<Integer, ArrayList<Integer>[]> entry : map.entrySet()) {
+                                int rndRouteBorder = 0;
+                                for (int j = 0; j < ROUTE_NUMBERS; j++) {
+                                    ArrayList<Integer> route_cities = new ArrayList<>();
+                                    if (counter == DEPOT_NUMBERS * ROUTE_NUMBERS - 1) {
+                                        rndRouteBorder = 81 - sum;
+                                    } else {
+                                        rndRouteBorder = (int) (Math.random() * 2 + route_border);
+                                    }
+                                    counter++;
+
+                                    sum += rndRouteBorder;
+
+                                    for (int i = 0; i < rndRouteBorder; i++) {
+                                        int rnd_route = cities.remove(0);
+                                        route_cities.add(rnd_route);
+                                    }
+                                    entry.getValue()[j] = route_cities;
+                                }
+                            }
+                            //solution = map;
+                            solutions.put(map, calculateCost(map));
+                            //tryCounter.getAndIncrement();
+                        }
+                );*/
+
+        while (tryCounter.get() != 10) {
+            int lowerBound = ((81 - DEPOT_NUMBERS) / (DEPOT_NUMBERS * ROUTE_NUMBERS));
+            int extra = (81 - DEPOT_NUMBERS) % (DEPOT_NUMBERS * ROUTE_NUMBERS);
             int sum = 0;
             LinkedHashMap<Integer, ArrayList<Integer>[]> map = new LinkedHashMap<>();
             LinkedList<Integer> cities = new LinkedList<>();
@@ -324,55 +376,87 @@ public class mTSP {
             }
 
             /** Route şehirleri seçimi */
-            int counter = 0;
+
             for (Map.Entry<Integer, ArrayList<Integer>[]> entry : map.entrySet()) {
-                int rndRouteBorder = 0;
                 for (int j = 0; j < ROUTE_NUMBERS; j++) {
                     ArrayList<Integer> route_cities = new ArrayList<>();
-                    if (counter == DEPOT_NUMBERS * ROUTE_NUMBERS - 1) {
-                        rndRouteBorder = 81 - sum;
-                    } else {
-                        rndRouteBorder = (int) (Math.random() * 2 + route_border);
-                    }
-                    counter++;
 
-                    sum += rndRouteBorder;
-
-                    for (int i = 0; i < rndRouteBorder; i++) {
+                    for (int i = 0; i < lowerBound; i++) {
                         int rnd_route = cities.remove(0);
                         route_cities.add(rnd_route);
                     }
                     entry.getValue()[j] = route_cities;
                 }
             }
-            solution = map;
 
-            if (tryCounter == 0)
-                bestSolution = copy(solution);
-
-            else {
-                if (check(bestSolution, solution)) {
-                    bestSolution = copy(solution);
+            int counter = 0;
+            for (Map.Entry<Integer, ArrayList<Integer>[]> entry : map.entrySet()) {
+                if(counter==extra){
+                    break;
+                }
+                for (int j = 0; j < ROUTE_NUMBERS; j++) {
+                    ArrayList<Integer> route_cities = entry.getValue()[j];
+                    int rnd_route = cities.remove(0);
+                    route_cities.add(rnd_route);
+                    counter++;
+                    if(cities.size()==0){
+                        break;
+                    }
                 }
             }
+            //solution = map;
+            solutions.put(map, calculateCost(map));
 
-            tryCounter++;
+//            if (tryCounter == 0)
+//                bestSolution = copy(solution);
+//
+//            else {
+//                if (check(bestSolution, solution)) {
+//                    bestSolution = copy(solution);
+//                }
+//            }
+
+            tryCounter.getAndIncrement();
         }
-        cost = calculateCost(bestSolution);
+        /** Test */
+        /*for (Map.Entry<LinkedHashMap<Integer, ArrayList<Integer>[]>, Integer> entry : solutions.entrySet())
+            System.out.println("Value = " + entry.getValue());*/
+
+        /** Finding best */
+        //int bestCost = 0;
+        int x = 0;
+        for (Map.Entry<LinkedHashMap<Integer, ArrayList<Integer>[]>, Integer> entry : solutions.entrySet()) {
+            if (x == 0) {
+                bestSolution = entry.getKey();
+                bestCost = entry.getValue();
+            } else {
+                if (bestCost > entry.getValue()) {
+                    bestSolution = entry.getKey();
+                    bestCost = entry.getValue();
+                }
+            }
+            x++;
+        }
+        //cost = calculateCost(bestSolution);
         copySolution = copy(bestSolution);
         System.out.println("First Solution :");
-        print(bestSolution);
-        System.out.println("** " + calculateCost(bestSolution));
+        if (!verbose) {
+            print(bestSolution);
+            //System.out.println("** " + calculateCost(bestSolution));
+
+        } else {
+            printVerbose(bestSolution);
+        }
+        System.out.println("** " + bestCost);
+
     }
 
-    public void secondPart(){
+    public void secondPart() {
         int tryCounter2 = 0;
         while (tryCounter2 != 5000000) {
 
             int rnd = (int) (Math.random() * 5);
             LinkedHashMap<Integer, ArrayList<Integer>[]> swappedMap;
-
-
             switch (rnd) {
                 case 0:
                     swappedMap = (swapNodesInRoute());
@@ -388,8 +472,7 @@ public class mTSP {
                     if (check(bestSolution, swappedMap)) {
                         bestSolution = copy(swappedMap);
                         swapHubWithNodeInRoute++;
-                    }
-                    else {
+                    } else {
                         copySolution = copy(bestSolution);
                     }
                     break;
@@ -398,8 +481,7 @@ public class mTSP {
                     if (check(bestSolution, swappedMap)) {
                         bestSolution = copy(swappedMap);
                         swapNodesBetweenRoutes++;
-                    }
-                    else {
+                    } else {
                         copySolution = copy(bestSolution);
                     }
                     break;
@@ -408,8 +490,7 @@ public class mTSP {
                     if (check(bestSolution, swappedMap)) {
                         bestSolution = copy(swappedMap);
                         insertNodeInRoute++;
-                    }
-                    else {
+                    } else {
                         copySolution = copy(bestSolution);
                     }
                     break;
@@ -419,19 +500,68 @@ public class mTSP {
                         if (check(bestSolution, swappedMap)) {
                             bestSolution = copy(swappedMap);
                             insertNodeBetweenRoutes++;
-                        }
-                        else {
+                        } else {
                             copySolution = copy(bestSolution);
                         }
                     }
             }
             tryCounter2++;
         }
-        cost = calculateCost(bestSolution);
+        bestCost = calculateCost(bestSolution);
         System.out.println("New Solution :");
-        print(bestSolution);
-        System.out.println("** " + cost);
+        if (!verbose) {
+            print(bestSolution);
+            //System.out.println("** " + calculateCost(bestSolution));
+
+        } else {
+            printVerbose(bestSolution);
+        }
+        System.out.println("** " + bestCost);
         printCounters();
     }
 
+    private void printVerbose(LinkedHashMap<Integer, ArrayList<Integer>[]> normal) {
+        /*LinkedHashMap<String, ArrayList<String>[]> verbose = new LinkedHashMap<>();
+
+        for (Map.Entry<Integer, ArrayList<Integer>[]> entry : normal.entrySet()) {
+            for (int i = 0; i < entry.getValue().length; i++) {
+                for (int j = 0; j < entry.getValue()[i].size(); j++) {
+                    String strVerbose = TurkishNetwork.cities[entry.getValue()[i].get(j)];
+
+
+                }
+            }
+        }*/
+        LinkedHashMap<String, ArrayList<String>[]> verbose = new LinkedHashMap<>();
+        for (Map.Entry<Integer, ArrayList<Integer>[]> entry : normal.entrySet()) {
+            ArrayList<String>[] arrayLists = new ArrayList[ROUTE_NUMBERS];
+            for (int i = 0; i < entry.getValue().length; i++) {
+                ArrayList<String> copyRoutes = new ArrayList<>();
+                for (int j = 0; j < entry.getValue()[i].size(); j++) {
+                    copyRoutes.add(TurkishNetwork.cities[entry.getValue()[i].get(j)]);
+                }
+                arrayLists[i] = copyRoutes;
+            }
+            verbose.put(TurkishNetwork.cities[entry.getKey()], arrayLists);
+        }
+        int counter = 1;
+        for (Map.Entry<String, ArrayList<String>[]> depot : verbose.entrySet()) {
+            System.out.println("Depot" + counter + ": " + depot.getKey());
+            int routeNumber = 1;
+            for (int i = 0; i < depot.getValue().length; i++) {
+                System.out.print("    Route" + routeNumber + ": ");
+                for (int j = 0; j < depot.getValue()[i].size(); j++) {
+                    System.out.print(depot.getValue()[i].get(j));
+                    if (j != depot.getValue()[i].size() - 1) {
+                        System.out.print(",");
+                    }
+                }
+                System.out.println();
+                routeNumber++;
+            }
+            counter++;
+        }
+
+
+    }
 }
