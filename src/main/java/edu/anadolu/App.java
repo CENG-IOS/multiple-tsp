@@ -3,12 +3,20 @@ package edu.anadolu;
 import com.lexicalscope.jewel.cli.ArgumentValidationException;
 import com.lexicalscope.jewel.cli.CliFactory;
 
+import java.util.Comparator;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ForkJoinPool;
+import java.util.stream.IntStream;
+
 /**
  * Hello world!
  */
 @SuppressWarnings("ALL")
 public class App {
     public static void main(String[] args) {
+        int numTasks = 20;
+        ForkJoinPool pool = new ForkJoinPool(numTasks);
+
         Params params;
         try {
             params = CliFactory.parseArguments(Params.class, args);
@@ -18,23 +26,27 @@ public class App {
         }
 
         mTSP best = null;
-        int minCost = Integer.MAX_VALUE;
+        //int minCost = Integer.MAX_VALUE;
 
+        ConcurrentLinkedQueue<mTSP> solutions = new ConcurrentLinkedQueue<>();
+
+        long startTime = System.currentTimeMillis();
         /** First Part */
-        for (int i = 0; i < 100_000; i++) {
+        IntStream.range(1, 500_000)
+                .boxed()
+                .parallel()
+                .forEach(integer -> {
+                            mTSP mTSP = new mTSP(params.getNumDepots(), params.getNumSalesmen());
+                            mTSP.randomSolution();
+                            mTSP.validate();
+                            solutions.add(mTSP);
+                        }
+                );
+        long estimatedTime = System.currentTimeMillis() - startTime;
+        System.out.println(estimatedTime);
 
-            mTSP mTSP = new mTSP(params.getNumDepots(), params.getNumSalesmen());
-
-            mTSP.randomSolution();
-            mTSP.validate();
-
-            final int cost = mTSP.cost();
-
-            if (cost < minCost) {
-                best = mTSP;
-                minCost = cost;
-            }
-        }
+        /** Finding best */
+        best = solutions.stream().min(Comparator.comparingInt(mTSP::cost)).get();
 
         if (best != null) {
             best.print(params.getVerbose());
