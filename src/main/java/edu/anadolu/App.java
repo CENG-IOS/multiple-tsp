@@ -32,7 +32,7 @@ public class App {
 
         long startTime = System.currentTimeMillis();
         /** First Part */
-        IntStream.range(1, 500_000)
+        IntStream.range(1, 100_000)
                 .boxed()
                 .parallel()
                 .forEach(integer -> {
