@@ -1,5 +1,13 @@
 package edu.anadolu;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -23,6 +31,10 @@ public class mTSP {
     //private ConcurrentMap<LinkedHashMap<Integer, ArrayList<Integer>[]>, Integer> solutions = new ConcurrentHashMap<>();
 
     public mTSP(int depot_numbers, int route_numbers, boolean verbose) {
+        int x = depot_numbers * route_numbers + depot_numbers;
+        if (x > 81 || depot_numbers <= 0 || route_numbers <= 0) {
+            throw new RuntimeException("illegal inputs!");
+        }
         DEPOT_NUMBERS = depot_numbers;
         ROUTE_NUMBERS = route_numbers;
         this.verbose = verbose;
@@ -391,7 +403,7 @@ public class mTSP {
 
             int counter = 0;
             for (Map.Entry<Integer, ArrayList<Integer>[]> entry : map.entrySet()) {
-                if(counter==extra){
+                if (counter == extra) {
                     break;
                 }
                 for (int j = 0; j < ROUTE_NUMBERS; j++) {
@@ -399,7 +411,7 @@ public class mTSP {
                     int rnd_route = cities.remove(0);
                     route_cities.add(rnd_route);
                     counter++;
-                    if(cities.size()==0){
+                    if (cities.size() == 0) {
                         break;
                     }
                 }
@@ -518,6 +530,7 @@ public class mTSP {
         }
         System.out.println("** " + bestCost);
         printCounters();
+        writeJSONFILE();
     }
 
     private void printVerbose(LinkedHashMap<Integer, ArrayList<Integer>[]> normal) {
@@ -563,5 +576,53 @@ public class mTSP {
         }
 
 
+    }
+
+    private void writeJSONFILE() {
+
+        JSONObject obj = new JSONObject();
+        JSONArray list = new JSONArray();
+
+        for (Map.Entry<Integer, ArrayList<Integer>[]> entry : bestSolution.entrySet()) {
+
+            JSONObject Obj = new JSONObject();
+            // JSONObject route = new JSONObject();
+            obj.put("solution", list);
+            Obj.put("depot", entry.getKey().toString());
+            JSONArray array = new JSONArray();
+            for (int i = 0; i < entry.getValue().length; i++) {
+
+                JSONObject object = new JSONObject();
+                String temp = "";
+
+                for (int j = 0; j < entry.getValue()[i].size(); j++) {
+                    if (entry.getValue()[i].size() - 1 == j) {
+
+                        temp += entry.getValue()[i].get(j);
+
+                    } else {
+                        temp += entry.getValue()[i].get(j) + " ";
+
+                    }
+
+                }
+
+                array.put(temp);
+
+            }
+            Obj.put("route", array);
+
+            list.put(Obj);
+
+        }
+
+        Path path = Paths.get("solution.json");
+        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+            writer.write(obj.toString());
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+        System.out.println(obj);
     }
 }
